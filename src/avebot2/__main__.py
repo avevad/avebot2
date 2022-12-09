@@ -182,9 +182,7 @@ async def handle_short_code(msg):
         if match: last_code = match.group(0)
 
 
-async def client_loop(phone):
-    client = TelegramClient(f"sessions/{phone}", api_id=API_ID, api_hash=API_HASH)
-    await client.start(phone)
+async def client_loop(client):
     client.on(events.NewMessage(
         from_users=(await client.get_me()),
         forwards=False,
@@ -203,7 +201,15 @@ async def main():
         os.mkdir("sessions")
     except FileExistsError:
         pass
-    loops = [client_loop(phone) for phone in os.environ['PHONES'].split(':')]
+    phones = os.environ['PHONES'].split(':')
+    clients = []
+    for phone in phones:
+        print(f"Authenticating {phone}")
+        client = TelegramClient(f"sessions/{phone}", api_id=API_ID, api_hash=API_HASH)
+        await client.start(phone)
+        clients.append(client)
+    loops = [client_loop(client) for client in clients]
+    print(f"{BOT_NAME} v{BOT_VERSION} started!")
     await asyncio.gather(*loops)
 
 if __name__ == '__main__':
