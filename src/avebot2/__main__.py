@@ -199,7 +199,10 @@ async def client_loop(phone):
     await client.run_until_disconnected()
 
 async def main():
-    os.mkdir("sessions")
+    try:
+        os.mkdir("sessions")
+    except FileExistsError:
+        pass
     loops = [client_loop(phone) for phone in os.environ['PHONES'].split(':')]
     await asyncio.gather(*loops)
 
