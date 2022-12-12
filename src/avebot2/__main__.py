@@ -132,6 +132,9 @@ async def handle_shell_command(msg):
     env["AVEBOT_NAME"] = f"{me.first_name} {me.last_name}" if me.last_name is not None else me.first_name
     env["AVEBOT_ID"] = str(me.id)
     env["AVEBOT_CHAT_ID"] = str((await msg.get_chat()).id)
+    if msg.is_reply:
+        rep = await msg.get_reply_message()
+        if rep.raw_text is not None: env["AVEBOT_REPLY"] = rep.raw_text
     proc = await asyncio.create_subprocess_shell(cmd, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT, env=env)
     term.puts(f"$ {cmd}\n")
     procs[(msg.chat_id, msg.id)] = ProcHandle(proc, term)
@@ -173,7 +176,7 @@ async def client_loop(phone):
     client.on(events.NewMessage(
         from_users=(await client.get_me()),
         forwards=False,
-        pattern=re.compile('^[\$\;].+$')
+        pattern=re.compile('^[\$\;\,].+$')
     ))(handle_shell_command)
     client.on(events.MessageEdited(
         func=lambda msg: (msg.chat_id, msg.id) in procs
