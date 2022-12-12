@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "avebot2"
+version = "2.0"
+authors = [
+  { name="Vadim Averin", email="avevad0808@gmail.com" },
+]
+description = "Yet another Telegram userbot"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "telethon"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/avevad/avebot2"
+"Bug Tracker" = "https://github.com/avevad/avebot2/issues"
