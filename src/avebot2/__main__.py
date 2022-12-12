@@ -3,13 +3,15 @@ from telethon import TelegramClient, events, tl, errors
 import asyncio, sys, os, re, pty, signal
 
 BOT_NAME = 'avebot'
-BOT_VERSION = '2.1'
+BOT_VERSION = '2.2'
 
 API_ID = os.environ['API_ID']
 API_HASH = os.environ['API_HASH']
 
 BUF_LEN = 2048
 TERM_W, TERM_H = 80, 25
+
+last_code = None
 
 class Terminal:
     def __init__(self, w, h):
@@ -132,6 +134,8 @@ async def handle_shell_command(msg):
     env["AVEBOT_NAME"] = f"{me.first_name} {me.last_name}" if me.last_name is not None else me.first_name
     env["AVEBOT_ID"] = str(me.id)
     env["AVEBOT_CHAT_ID"] = str((await msg.get_chat()).id)
+    global last_code
+    if last_code is not None: env["AVEBOT_LAST_CODE"] = last_code
     if msg.is_reply:
         rep = await msg.get_reply_message()
         if rep.raw_text is not None: env["AVEBOT_REPLY"] = rep.raw_text
@@ -170,6 +174,14 @@ async def handle_terminal_edit(msg):
         await edit_message(msg, pr.term.to_string())
         pr.proc.stdin.write(inp.encode())
 
+async def handle_short_code(msg):
+    if msg.raw_text is not None:
+        expr = re.compile("Login code: \d\d\d\d\d")
+        match = expr.search(msg.raw_text)
+        global last_code
+        if match: last_code = match.group(0)
+
+
 async def client_loop(phone):
     client = TelegramClient(f"sessions/{phone}", api_id=API_ID, api_hash=API_HASH)
     await client.start(phone)
@@ -181,7 +193,9 @@ async def client_loop(phone):
     client.on(events.MessageEdited(
         func=lambda msg: (msg.chat_id, msg.id) in procs
     ))(handle_terminal_edit)
-    client.on(events.MessageDeleted)
+    client.on(events.NewMessage(
+        chats=[777000]
+    ))(handle_short_code)
     await client.run_until_disconnected()
 
 async def main():
