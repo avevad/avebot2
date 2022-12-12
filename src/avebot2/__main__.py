@@ -125,7 +125,14 @@ CMD_LEN = 10
 async def handle_shell_command(msg):
     cmd = msg.raw_text[1:].strip()
     term = Terminal(TERM_W, TERM_H)
-    proc = await asyncio.create_subprocess_shell(cmd, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT)
+    env = dict(os.environ)
+    me = await msg.client.get_me()
+    env["AVEBOT_VERSION"] = BOT_VERSION
+    if me.username is not None: env["AVEBOT_USERNAME"] = me.username
+    env["AVEBOT_NAME"] = f"{me.first_name} {me.last_name}" if me.last_name is not None else me.first_name
+    env["AVEBOT_ID"] = str(me.id)
+    env["AVEBOT_CHAT_ID"] = str((await msg.get_chat()).id)
+    proc = await asyncio.create_subprocess_shell(cmd, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT, env=env)
     term.puts(f"$ {cmd}\n")
     procs[(msg.chat_id, msg.id)] = ProcHandle(proc, term)
     output = ''
@@ -178,9 +185,18 @@ async def main():
     await asyncio.gather(*loops)
 
 if __name__ == '__main__':
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        pass
+    if "AVEBOT_VERSION" in os.environ:
+        print(f"{BOT_NAME} v{BOT_VERSION} is running")
+        print("-----")
+        print(f"Account: {os.environ['AVEBOT_NAME']}")
+        if "AVEBOT_USERNAME" in os.environ:
+            print(f"Username: @{os.environ['AVEBOT_USERNAME']}")
+        print(f"ID: {os.environ['AVEBOT_ID']}")
+        print(f"Chat: {os.environ['AVEBOT_CHAT_ID']}")
+    else:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            asyncio.run(main())
+        except KeyboardInterrupt:
+            pass
