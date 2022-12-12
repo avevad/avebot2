@@ -3,7 +3,7 @@ from telethon import TelegramClient, events, tl, errors
 import asyncio, sys, os, re, pty, signal
 
 BOT_NAME = 'avebot'
-BOT_VERSION = '2.0'
+BOT_VERSION = '2.1'
 
 API_ID = os.environ['API_ID']
 API_HASH = os.environ['API_HASH']
@@ -181,6 +181,7 @@ async def client_loop(phone):
     client.on(events.MessageEdited(
         func=lambda msg: (msg.chat_id, msg.id) in procs
     ))(handle_terminal_edit)
+    client.on(events.MessageDeleted)
     await client.run_until_disconnected()
 
 async def main():
